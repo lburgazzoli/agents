@@ -2,9 +2,13 @@
 
 Day-to-day operations for an existing kubebuilder project. This is the counterpart to the scaffolding workflow — use after the project is set up.
 
+Assumes: kubebuilder v4+, Go 1.22+, multigroup layout, cobra subcommand structure (from [main-config](main-config.md)).
+
 ## Common Workflows
 
 ### After changing types or markers
+
+See [markers](markers.md) for correct syntax.
 
 ```bash
 make manifests generate
@@ -19,6 +23,16 @@ go run sigs.k8s.io/kubebuilder/v4/cmd@latest create api --group <group> --versio
 
 Then: scaffold stub types, update `cmd/operator/operator.go` to register the new controller, run `make manifests generate`.
 
+### Add a new API version to existing kind
+
+For example, adding `v1beta1` alongside `v1alpha1`:
+
+```bash
+go run sigs.k8s.io/kubebuilder/v4/cmd@latest create api --group <group> --version v1beta1 --kind <Kind>
+```
+
+Then set up hub-spoke conversion — see [api-versioning](api-versioning.md). Designate one version as hub with `+kubebuilder:storageversion`, implement `ConvertTo`/`ConvertFrom` on spokes.
+
 ### Add webhooks to existing API
 
 ```bash
@@ -26,7 +40,7 @@ go run sigs.k8s.io/kubebuilder/v4/cmd@latest create webhook --group <group> --ve
   --defaulting --programmatic-validation
 ```
 
-Then: uncomment webhook/cert-manager patches in kustomize config, set replicas to 2 in `config/manager/manager.yaml`.
+Then: uncomment webhook/cert-manager patches in kustomize config, set replicas to 2 in `config/manager/manager.yaml`. For conversion webhooks, see [api-versioning](api-versioning.md).
 
 ### Regenerate Helm chart
 
@@ -34,11 +48,13 @@ Then: uncomment webhook/cert-manager patches in kustomize config, set replicas t
 make helm
 ```
 
-This runs: `build-installer` → helm edit → `hack/scripts/helm-post-process.sh`.
+The `helm` target is a custom Makefile target added during scaffolding (not a standard kubebuilder target). It chains: `build-installer` → helm edit → `hack/scripts/helm-post-process.sh`.
 
-Review changes in `config/chart/`. CRDs should be in `templates/`, not `crds/`.
+Review changes in `config/chart/`. CRDs should be in `templates/`, not `crds/`. If webhooks are configured, verify replicas is still set to 2 in `config/manager/manager.yaml`.
 
 ### Add a new subcommand
+
+See [main-config](main-config.md) for the cobra structure.
 
 Create `cmd/<name>/<name>.go` with a cobra command, register it in `cmd/main.go` via `root.AddCommand()`.
 
@@ -47,19 +63,30 @@ Create `cmd/<name>/<name>.go` with a cobra command, register it in `cmd/main.go`
 Edit `_VERSION` variables at the top of the Makefile. Resolve current stable versions:
 
 ```bash
-go list -m -versions sigs.k8s.io/controller-tools/cmd/controller-gen | tr ' ' '\n' | tail -1
+go list -m -versions sigs.k8s.io/controller-tools | tr ' ' '\n' | grep -vE 'rc|beta|alpha' | tail -1
 ```
+
+Use the correct module path for each tool:
+- `sigs.k8s.io/controller-tools` (controller-gen)
+- `sigs.k8s.io/kustomize/kustomize/v5` (kustomize)
+- `github.com/golangci/golangci-lint` (golangci-lint)
 
 ### Run tests
 
 ```bash
+make manifests generate
+make build
 make test
 ```
 
-- **k3senvtest**: requires container runtime (Podman/Docker)
-- **envtest**: requires `KUBEBUILDER_ASSETS` (handled by `setup-envtest` in Makefile)
+Always run `make manifests generate` and `make build` before tests, especially after type changes.
+
+- **k3senvtest**: requires container runtime (Podman/Docker) — see [e2e-k3senvtest](e2e-k3senvtest.md)
+- **envtest**: requires `KUBEBUILDER_ASSETS` (handled by `setup-envtest` in Makefile) — see [e2e-envtest](e2e-envtest.md)
 
 ### Build and deploy
+
+The `docker-build`/`docker-push` targets are kubebuilder's default names. They work with Podman via `podman-docker` package or `alias docker=podman`.
 
 ```bash
 make docker-build IMG=<registry>/<name>:<tag>
@@ -75,6 +102,15 @@ kind load docker-image <name>:test
 make deploy IMG=<name>:test
 ```
 
+With Podman: `KIND_EXPERIMENTAL_PROVIDER=podman kind create cluster`. Use `/dev-kind-setup` to create a Kind cluster with cert-manager.
+
+### Undeploy
+
+```bash
+make undeploy    # Remove operator deployment
+make uninstall   # Remove CRDs from cluster
+```
+
 ## PROJECT File Metadata
 
 Test configuration is stored in `plugins.dev-kubebuilder.lburgazzoli.github.io/v1`:
@@ -88,6 +124,8 @@ plugins:
 
 ## Key Files
 
+This layout reflects the cobra subcommand structure from the skill's scaffolding (see [main-config](main-config.md)). Vanilla kubebuilder projects have a single `cmd/main.go`.
+
 | File | Purpose |
 |------|---------|
 | `PROJECT` | Kubebuilder metadata, API registry, plugin config |
@@ -98,6 +136,12 @@ plugins:
 | `internal/webhook/<group>/<version>/` | Webhook handlers |
 | `config/crd/bases/` | Generated CRD YAMLs |
 | `config/rbac/` | Generated RBAC roles |
-| `config/chart/` | Helm chart |
+| `config/chart/` | Helm chart (custom, not default kubebuilder) |
 | `hack/scripts/` | Post-processing scripts |
 | `Makefile` | Build system (`go run` style, no `bin/`) |
+
+## Related Skills
+
+- **`dev-go-project`** — Makefile-first development for ongoing build/test/lint
+- **`dev-kind-setup`** — Kind cluster creation with cert-manager
+- **`dev-testcontainers`** — Podman setup for container-based tests
