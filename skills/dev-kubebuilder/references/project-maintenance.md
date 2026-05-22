@@ -33,24 +33,18 @@ go run sigs.k8s.io/kubebuilder/v4/cmd@latest create api --group <group> --versio
 
 Then set up hub-spoke conversion — see [api-versioning](api-versioning.md). Designate one version as hub with `+kubebuilder:storageversion`, implement `ConvertTo`/`ConvertFrom` on spokes.
 
-### Add webhooks to existing API
+### Add validation or webhooks
+
+Read [webhook-strategy](webhook-strategy.md) first — evaluate CRD markers and ValidatingAdmissionPolicy before creating a classic webhook.
+
+If a classic webhook is needed:
 
 ```bash
 go run sigs.k8s.io/kubebuilder/v4/cmd@latest create webhook --group <group> --version <version> --kind <Kind> \
   --defaulting --programmatic-validation
 ```
 
-Then: uncomment webhook/cert-manager patches in kustomize config, set replicas to 2 in `config/manager/manager.yaml`. For conversion webhooks, see [api-versioning](api-versioning.md).
-
-### Regenerate Helm chart
-
-```bash
-make helm
-```
-
-The `helm` target is a custom Makefile target added during scaffolding (not a standard kubebuilder target). It chains: `build-installer` → helm edit → `hack/scripts/helm-post-process.sh`.
-
-Review changes in `config/chart/`. CRDs should be in `templates/`, not `crds/`. If webhooks are configured, verify replicas is still set to 2 in `config/manager/manager.yaml`.
+Then: uncomment webhook/cert-manager patches in kustomize config, set replicas to 2 in `config/manager/manager.yaml`, scope with namespace/object selectors. For conversion webhooks, see [api-versioning](api-versioning.md).
 
 ### Add a new subcommand
 
@@ -136,8 +130,6 @@ This layout reflects the cobra subcommand structure from the skill's scaffolding
 | `internal/webhook/<group>/<version>/` | Webhook handlers |
 | `config/crd/bases/` | Generated CRD YAMLs |
 | `config/rbac/` | Generated RBAC roles |
-| `config/chart/` | Helm chart (custom, not default kubebuilder) |
-| `hack/scripts/` | Post-processing scripts |
 | `Makefile` | Build system (`go run` style, no `bin/`) |
 
 ## Related Skills

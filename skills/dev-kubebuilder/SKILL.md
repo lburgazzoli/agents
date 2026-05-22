@@ -27,6 +27,7 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 - [envtest](references/e2e-envtest.md) — standard envtest environment: Makefile, limitations
 - [test-gomega](references/test-gomega.md) — vanilla Go test scaffolding for both environments
 - [test-ginkgo](references/test-ginkgo.md) — Ginkgo test scaffolding for both environments
+- [webhook-strategy](references/webhook-strategy.md) — webhook decision tree: CRD markers vs ValidatingAdmissionPolicy vs classic webhook
 - [main-config](references/main-config.md) — cobra+viper CLI, cache/client config, subcommand structure
 - [project-maintenance](references/project-maintenance.md) — day-to-day operations, common workflows, key files
 
@@ -99,7 +100,7 @@ Present a summary table to the user and ask for confirmation before proceeding:
 ### Step 2: Initialize project
 
 ```bash
-go run sigs.k8s.io/kubebuilder/v4/cmd@latest init --domain <domain> --repo <module> --multigroup --plugins go/v4,helm/v2-alpha
+go run sigs.k8s.io/kubebuilder/v4/cmd@latest init --domain <domain> --repo <module> --multigroup
 ```
 
 Always use `--multigroup` — it's easier to add API groups later than to migrate the layout.
@@ -132,18 +133,24 @@ After each: note the generated files location. Read [multigroup layout](referenc
 
 Edit generated `*_types.go` files. Read [markers](references/markers.md) for syntax. Place stub Spec/Status fields with a few common markers as examples — the user fills in their actual domain model. Always include `Conditions []metav1.Condition` in Status.
 
-### Step 6: Create webhooks
+### Step 6: Add validation / webhooks
 
-For each API that needs webhooks:
+Read [webhook-strategy](references/webhook-strategy.md) before creating any webhook. Evaluate in this order:
+
+1. **CRD markers** — field constraints via `+kubebuilder:validation:*` or CEL. No webhook server needed.
+2. **ValidatingAdmissionPolicy** (K8s 1.30+) — declarative validation, no Go code needed.
+3. **Classic webhook** — only for mutation, conversion, external lookups, or cross-resource checks.
+
+If a classic webhook is needed:
 
 ```bash
 go run sigs.k8s.io/kubebuilder/v4/cmd@latest create webhook --group <group> --version <version> --kind <Kind> \
   --defaulting --programmatic-validation
 ```
 
-For conversion webhooks between API versions, read [api-versioning](references/api-versioning.md).
+**Always scope webhooks** with namespace or object selectors — never intercept core types (pods, deployments) cluster-wide. Webhooks require cert-manager for TLS in-cluster — use `/dev-kind-setup`.
 
-Webhooks require cert-manager for TLS in-cluster. Use `/dev-kind-setup` to create a Kind cluster with cert-manager installed.
+For conversion webhooks, read [api-versioning](references/api-versioning.md).
 
 ### Step 7: Review kustomize config
 
@@ -169,20 +176,7 @@ Review generated RBAC in `config/rbac/` — check for over-permissive roles.
 
 Fix any compilation errors before proceeding.
 
-### Step 9: Generate Helm chart
-
-Generate chart to `config/chart/` (not the default `dist/`):
-
-```bash
-make build-installer
-go run sigs.k8s.io/kubebuilder/v4/cmd@latest edit --plugins=helm.kubebuilder.io/v2-alpha --output-dir=config/chart
-```
-
-Create `hack/scripts/helm-post-process.sh` to move CRDs from `crds/` to `templates/` (Helm-managed lifecycle). Add a `helm` Makefile target chaining: `build-installer` → helm edit → post-process script.
-
-If webhooks are configured, set replicas to 2 in `config/manager/manager.yaml`.
-
-### Step 10: Implement reconciler skeleton
+### Step 9: Implement reconciler skeleton
 
 Read [patterns](references/patterns.md) before implementing.
 
@@ -194,7 +188,7 @@ For each controller, scaffold:
 
 For external types (watching CRDs from other operators), see the "Watching external types" section in [patterns](references/patterns.md).
 
-### Step 11: Patch Makefile to `go run` style
+### Step 10: Patch Makefile to `go run` style
 
 Kubebuilder generates a Makefile that downloads tool binaries into `bin/` via `LOCALBIN`. **Patch it to follow `dev-go-project-new` conventions:** `go run <module>@<version>` for all tools, pinned versions in `_VERSION` variables at the top, no `bin/` directory.
 
@@ -220,14 +214,14 @@ SETUP_ENVTEST_VERSION ?= <resolve current stable>
 SETUP_ENVTEST = go run sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION)
 ```
 
-### Step 12: Set up tests
+### Step 11: Set up tests
 
 Two independent choices: **environment** and **style**. Read both reference files:
 
 1. **Environment** → read [k3senvtest](references/e2e-k3senvtest.md) or [envtest](references/e2e-envtest.md) for dependencies, Makefile changes, and environment-specific config.
 2. **Style** → read [test-gomega](references/test-gomega.md) or [test-ginkgo](references/test-ginkgo.md) for test scaffolding code matching both choices. Each style file has sections for both environments.
 
-### Step 13: Run tests
+### Step 12: Run tests
 
 ```bash
 make test
@@ -237,7 +231,7 @@ If tests fail:
 - **k3senvtest**: read [k3senvtest](references/e2e-k3senvtest.md). Common issues: container runtime not available (see `dev-testcontainers` skill), k3s image not cached (first run pulls it).
 - **envtest**: check `KUBEBUILDER_ASSETS` path, verify CRD directory paths are correct for multigroup layout.
 
-### Step 14: Summary
+### Step 13: Summary
 
 Report what was scaffolded: APIs created, webhooks configured, testing framework used, tests rewritten.
 
@@ -255,6 +249,6 @@ Kubebuilder's Makefile is the project's build system — use `dev-go-project` fo
 
 5. **RBAC markers go on the reconciler's `Reconcile` method**, not on the types.
 
-6. **`dev-go-project-new` Makefile conventions apply.** Kubebuilder generates a Makefile that downloads binaries into `bin/`. Step 9 patches it to use `go run <module>@<version>` with pinned `_VERSION` variables — the same conventions as `dev-go-project-new`. Never use `go install` or `@latest`.
+6. **`dev-go-project-new` Makefile conventions apply.** Kubebuilder generates a Makefile that downloads binaries into `bin/`. Step 10 patches it to use `go run <module>@<version>` with pinned `_VERSION` variables — the same conventions as `dev-go-project-new`. Never use `go install` or `@latest`.
 
 7. **Test style is selectable.** If `+gomega` is selected, rewrite kubebuilder's Ginkgo tests to vanilla Go tests. If `+ginkgo` is selected, keep the scaffolded test structure. Either way, use dot imports for Gomega: `import . "github.com/onsi/gomega"`
