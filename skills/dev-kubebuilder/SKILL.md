@@ -27,8 +27,10 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 - [envtest](references/e2e-envtest.md) — standard envtest environment: Makefile, limitations
 - [test-gomega](references/test-gomega.md) — vanilla Go test scaffolding for both environments
 - [test-ginkgo](references/test-ginkgo.md) — Ginkgo test scaffolding for both environments
+- [main-config](references/main-config.md) — cobra+viper CLI, cache/client config, subcommand structure
+- [project-maintenance](references/project-maintenance.md) — day-to-day operations, common workflows, key files
 
-**Scope:** kubebuilder v4+ with `go/v4` plugin. For other plugins, consult `kubebuilder init --help`. Also applies to operator-sdk projects (uses kubebuilder under the hood).
+**Scope:** kubebuilder v4+ with `go/v4` plugin. Also applies to operator-sdk projects.
 
 ## Input
 
@@ -97,7 +99,7 @@ Present a summary table to the user and ask for confirmation before proceeding:
 ### Step 2: Initialize project
 
 ```bash
-go run sigs.k8s.io/kubebuilder/v4/cmd@latest init --domain <domain> --repo <module> --multigroup
+go run sigs.k8s.io/kubebuilder/v4/cmd@latest init --domain <domain> --repo <module> --multigroup --plugins go/v4,helm/v2-alpha
 ```
 
 Always use `--multigroup` — it's easier to add API groups later than to migrate the layout.
@@ -110,7 +112,11 @@ yq '.plugins."dev-kubebuilder.lburgazzoli.github.io/v1" = {"testEnvironment": "<
 
 This persists the choices so future invocations of this skill auto-detect them from the PROJECT file.
 
-### Step 3: Create APIs
+### Step 3: Rewrite main.go to cobra subcommand structure
+
+Read [main-config](references/main-config.md). Rewrite `cmd/main.go` as root cobra command, create `cmd/operator/operator.go` as operator subcommand with viper config, cache stripping, and leader election enabled by default. Add `go get github.com/spf13/cobra github.com/spf13/viper`.
+
+### Step 4: Create APIs
 
 For each API in the plan:
 
@@ -122,32 +128,11 @@ For cluster-scoped resources, add `--namespaced=false`.
 
 After each: note the generated files location. Read [multigroup layout](references/patterns.md#multigroup-directory-layout) if unsure about paths.
 
-### Step 4: Scaffold stub types
+### Step 5: Scaffold stub types
 
-For each API, edit the generated `*_types.go` files:
+Edit generated `*_types.go` files. Read [markers](references/markers.md) for syntax. Place stub Spec/Status fields with a few common markers as examples — the user fills in their actual domain model. Always include `Conditions []metav1.Condition` in Status.
 
-1. Read [markers](references/markers.md) for correct syntax.
-2. Place placeholder Spec and Status fields with a few common markers as examples.
-3. **Place stubs only** — show the marker syntax with placeholder fields. The user fills in their actual domain model.
-
-Example stub:
-
-```go
-type WidgetSpec struct {
-    // +kubebuilder:validation:MinLength=1
-    Name string `json:"name"`
-
-    // +kubebuilder:default:=1
-    // +kubebuilder:validation:Minimum=1
-    Replicas *int32 `json:"replicas,omitempty"`
-}
-
-type WidgetStatus struct {
-    Conditions []metav1.Condition `json:"conditions,omitempty"`
-}
-```
-
-### Step 5: Create webhooks
+### Step 6: Create webhooks
 
 For each API that needs webhooks:
 
@@ -160,7 +145,7 @@ For conversion webhooks between API versions, read [api-versioning](references/a
 
 Webhooks require cert-manager for TLS in-cluster. Use `/dev-kind-setup` to create a Kind cluster with cert-manager installed.
 
-### Step 6: Review kustomize config
+### Step 7: Review kustomize config
 
 Review and update generated kustomize configuration:
 
@@ -173,7 +158,7 @@ Review and update generated kustomize configuration:
    - `../certmanager`
    - `../webhook`
 
-### Step 7: Generate and validate
+### Step 8: Generate and validate
 
 ```bash
 make manifests generate
@@ -184,7 +169,20 @@ Review generated RBAC in `config/rbac/` — check for over-permissive roles.
 
 Fix any compilation errors before proceeding.
 
-### Step 8: Implement reconciler skeleton
+### Step 9: Generate Helm chart
+
+Generate chart to `config/chart/` (not the default `dist/`):
+
+```bash
+make build-installer
+go run sigs.k8s.io/kubebuilder/v4/cmd@latest edit --plugins=helm.kubebuilder.io/v2-alpha --output-dir=config/chart
+```
+
+Create `hack/scripts/helm-post-process.sh` to move CRDs from `crds/` to `templates/` (Helm-managed lifecycle). Add a `helm` Makefile target chaining: `build-installer` → helm edit → post-process script.
+
+If webhooks are configured, set replicas to 2 in `config/manager/manager.yaml`.
+
+### Step 10: Implement reconciler skeleton
 
 Read [patterns](references/patterns.md) before implementing.
 
@@ -196,31 +194,20 @@ For each controller, scaffold:
 
 For external types (watching CRDs from other operators), see the "Watching external types" section in [patterns](references/patterns.md).
 
-### Step 9: Patch Makefile to `go run` style
+### Step 11: Patch Makefile to `go run` style
 
 Kubebuilder generates a Makefile that downloads tool binaries into `bin/` via `LOCALBIN`. **Patch it to follow `dev-go-project-new` conventions:** `go run <module>@<version>` for all tools, pinned versions in `_VERSION` variables at the top, no `bin/` directory.
 
-**Remove from the generated Makefile:**
-- The entire `LOCALBIN` variable and `$(LOCALBIN)` directory creation
-- All binary download targets (`controller-gen`, `kustomize`, `setup-envtest`, etc.)
-- The `bin/` directory references
+Remove `LOCALBIN`, all binary download targets, and `bin/` references. Replace with `go run` variables:
 
-**Replace with `go run` variables at the top of the Makefile:**
 ```makefile
-## Tool Versions
 CONTROLLER_GEN_VERSION ?= <resolve current stable>
-KUSTOMIZE_VERSION      ?= <resolve current stable>
-GOLANGCI_LINT_VERSION  ?= <resolve current stable>
-GOVULNCHECK_VERSION    ?= <resolve current stable>
-
-## Tool Commands
 CONTROLLER_GEN = go run sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_GEN_VERSION)
-KUSTOMIZE      = go run sigs.k8s.io/kustomize/kustomize/v5@$(KUSTOMIZE_VERSION)
-GOLANGCI_LINT  = go run github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-GOVULNCHECK    = go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+KUSTOMIZE_VERSION ?= <resolve current stable>
+KUSTOMIZE = go run sigs.k8s.io/kustomize/kustomize/v5@$(KUSTOMIZE_VERSION)
 ```
 
-Resolve the current stable version for each tool at Makefile creation time and pin it — always use a specific version tag, not `@latest`.
+Same pattern for `golangci-lint` and `govulncheck`. Pin each version — never `@latest`.
 
 **If k3senvtest selected** — additionally:
 - Remove `ENVTEST` variable and `setup-envtest` binary download
@@ -233,14 +220,14 @@ SETUP_ENVTEST_VERSION ?= <resolve current stable>
 SETUP_ENVTEST = go run sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION)
 ```
 
-### Step 10: Set up tests
+### Step 12: Set up tests
 
 Two independent choices: **environment** and **style**. Read both reference files:
 
 1. **Environment** → read [k3senvtest](references/e2e-k3senvtest.md) or [envtest](references/e2e-envtest.md) for dependencies, Makefile changes, and environment-specific config.
 2. **Style** → read [test-gomega](references/test-gomega.md) or [test-ginkgo](references/test-ginkgo.md) for test scaffolding code matching both choices. Each style file has sections for both environments.
 
-### Step 11: Run tests
+### Step 13: Run tests
 
 ```bash
 make test
@@ -250,7 +237,7 @@ If tests fail:
 - **k3senvtest**: read [k3senvtest](references/e2e-k3senvtest.md). Common issues: container runtime not available (see `dev-testcontainers` skill), k3s image not cached (first run pulls it).
 - **envtest**: check `KUBEBUILDER_ASSETS` path, verify CRD directory paths are correct for multigroup layout.
 
-### Step 12: Summary
+### Step 14: Summary
 
 Report what was scaffolded: APIs created, webhooks configured, testing framework used, tests rewritten.
 
