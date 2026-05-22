@@ -50,4 +50,4 @@ Available tags and their Containerfiles:
 - Always use `:Z` on volume mounts for SELinux relabeling
 - `.context/` is always mounted read-write (scripts may write to `.context/tmp/`)
 - All other volume mounts must be read-only (`:ro,Z`) unless the task explicitly requires writing
-- Add `-v` mounts as needed when the script requires access to files outside the working directory
+- Add `-v` mounts when the script requires access to files outside the working directory
