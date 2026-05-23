@@ -25,6 +25,7 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 - [api-versioning](references/api-versioning.md) — hub-spoke conversion, storage version, deprecation
 - [k3senvtest](references/e2e-k3senvtest.md) — k3s-envtest environment: Makefile, webhooks, gotchas
 - [envtest](references/e2e-envtest.md) — standard envtest environment: Makefile, limitations
+- [kind](references/e2e-kind.md) — Kind cluster environment: Makefile targets, setup script, e2e test scaffolding
 - [test-gomega](references/test-gomega.md) — vanilla Go test scaffolding for both environments
 - [test-ginkgo](references/test-ginkgo.md) — Ginkgo test scaffolding for both environments
 - [webhook-strategy](references/webhook-strategy.md) — webhook decision tree: CRD markers vs ValidatingAdmissionPolicy vs classic webhook
@@ -45,10 +46,11 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 - **test environment** — selectable:
   - `+k3senvtest` — containerized k3s via testcontainers (real cluster behavior)
   - `+envtest` — standard controller-runtime envtest (in-process, kubebuilder default)
+  - `+kind` — external Kind cluster with deployed controller (full e2e)
 - **test style** — selectable:
   - `+gomega` — vanilla Go tests with Gomega (rewrites kubebuilder's scaffolded Ginkgo tests)
   - `+ginkgo` — keep kubebuilder's scaffolded Ginkgo tests as-is
-- If not specified, infer from the prompt (e.g., "using k3senvtest" → k3senvtest, "using gomega" → gomega)
+- If not specified, infer from the prompt (e.g., "using k3senvtest" → k3senvtest, "using kind" → kind, "using gomega" → gomega)
 - If still ambiguous, default to kubebuilder defaults: `+envtest +ginkgo`
 
 Example: `domain=example.com module=github.com/acme/op api=apps/v1alpha1/Widget+webhook +k3senvtest +gomega`
@@ -60,7 +62,7 @@ If `$ARGUMENTS` is empty or incomplete, ask the user for the missing pieces:
 4. Scope (namespaced or cluster)
 5. Whether webhooks are needed
 6. Whether additional APIs are planned
-7. Test environment: k3senvtest or envtest
+7. Test environment: k3senvtest, envtest, or kind
 8. Test style: gomega (vanilla Go tests) or ginkgo (keep kubebuilder default)
 
 Default version to `v1alpha1` if not specified.
@@ -72,7 +74,7 @@ Check before proceeding:
 1. `go version` — require 1.22+
 2. `kubebuilder version` — require v4+. If v3 detected, warn about incompatible flags and **stop**.
 3. `make --version` — must be available
-4. If k3senvtest selected: container runtime (`podman` or `docker`) must be available
+4. If k3senvtest or kind selected: container runtime (`podman` or `docker`) must be available
 
 All kubebuilder commands below use `go run sigs.k8s.io/kubebuilder/v4/cmd@latest`. Never use `go install` or a bare `kubebuilder` binary.
 
@@ -85,10 +87,11 @@ Check for a `PROJECT` file in the current directory.
 - **If `PROJECT` exists** → existing project. Read it to understand domain, layout, and existing APIs. Detect test configuration:
   1. Check `plugins.dev-kubebuilder.lburgazzoli.github.io/v1` in the PROJECT file for stored choices.
   2. If not present, auto-detect by scanning test files with ripgrep **in this order** (earlier match wins, since gomega is also used inside ginkgo projects):
-     1. `rg -l 'k3senv\.New\(' internal/` → k3senvtest
-     2. `rg -l 'envtest\.Environment' internal/` → envtest
-     3. `rg -l 'RunSpecs\(' internal/` → ginkgo
-     4. Only if ginkgo not found: `rg -l 'NewWithT\(' internal/` → gomega
+     1. `rg -l '//go:build e2e' test/` → kind (e2e build tag in `test/` directory)
+     2. `rg -l 'k3senv\.New\(' internal/` → k3senvtest
+     3. `rg -l 'envtest\.Environment' internal/` → envtest
+     4. `rg -l 'RunSpecs\(' internal/` → ginkgo
+     5. Only if ginkgo not found: `rg -l 'NewWithT\(' internal/` → gomega
   3. Skip to Step 3.
 - **If no `PROJECT`** → new project. Proceed to Step 2.
 
@@ -108,7 +111,7 @@ Always use `--multigroup` — it's easier to add API groups later than to migrat
 After init, store the selected test configuration in the PROJECT file:
 
 ```bash
-yq '.plugins."dev-kubebuilder.lburgazzoli.github.io/v1" = {"testEnvironment": "<envtest|k3senvtest>", "testStyle": "<gomega|ginkgo>"}' -i PROJECT
+yq '.plugins."dev-kubebuilder.lburgazzoli.github.io/v1" = {"testEnvironment": "<envtest|k3senvtest|kind>", "testStyle": "<gomega|ginkgo>"}' -i PROJECT
 ```
 
 This persists the choices so future invocations of this skill auto-detect them from the PROJECT file.
@@ -214,12 +217,26 @@ SETUP_ENVTEST_VERSION ?= <resolve current stable>
 SETUP_ENVTEST = go run sigs.k8s.io/controller-runtime/tools/setup-envtest@$(SETUP_ENVTEST_VERSION)
 ```
 
+**If kind selected** — read [kind](references/e2e-kind.md) for the full Makefile reference. Additionally:
+- Remove `ENVTEST` variable, `setup-envtest` binary download, and `KUBEBUILDER_ASSETS`
+- Simplify `test` target to: `go test -race -count=1 ./...`
+- Add `KIND_VERSION`, `KIND`, `HELM_VERSION`, `HELM` tool variables (same `go run` pattern)
+- Add `KIND_CLUSTER`, `KIND_NODE_IMAGE`, `CERT_MANAGER_VERSION` config variables
+- Add `CONTAINER_TOOL`, `IMG`, `KUBECTL` variables
+- Add `##@ Kind` section with `kind-create` and `kind-delete` targets
+- Add `container-build`, `container-push` targets
+- Add `test-e2e` target: `go test ./test/e2e/ -tags=e2e -v -timeout 30m`
+- Add `deploy-kustomize`, `undeploy-kustomize`, `install`, `uninstall` targets
+- Generate `hack/scripts/kind-setup.sh` and `chmod +x` it
+
 ### Step 11: Set up tests
 
 Two independent choices: **environment** and **style**. Read both reference files:
 
-1. **Environment** → read [k3senvtest](references/e2e-k3senvtest.md) or [envtest](references/e2e-envtest.md) for dependencies, Makefile changes, and environment-specific config.
+1. **Environment** → read [k3senvtest](references/e2e-k3senvtest.md), [envtest](references/e2e-envtest.md), or [kind](references/e2e-kind.md) for dependencies, Makefile changes, and environment-specific config.
 2. **Style** → read [test-gomega](references/test-gomega.md) or [test-ginkgo](references/test-ginkgo.md) for test scaffolding code matching both choices. Each style file has sections for both environments.
+
+**If kind selected**: generate `test/e2e/` directory with build-tagged e2e test files (see [kind](references/e2e-kind.md) for scaffolding). Remove kubebuilder's scaffolded controller test files from `internal/controller/` since they depend on envtest. Add `.kube/` to `.gitignore`.
 
 ### Step 12: Run tests
 
@@ -230,6 +247,7 @@ make test
 If tests fail:
 - **k3senvtest**: read [k3senvtest](references/e2e-k3senvtest.md). Common issues: container runtime not available (see `dev-testcontainers` skill), k3s image not cached (first run pulls it).
 - **envtest**: check `KUBEBUILDER_ASSETS` path, verify CRD directory paths are correct for multigroup layout.
+- **kind**: run `make kind-create`, then `make container-build container-push`, `make deploy-kustomize`, `make test-e2e`. Common issues: container runtime not available, image not pushed (Kind needs to pull from a registry), cert-manager not ready yet, `KUBECONFIG` not set to `.kube/config`.
 
 ### Step 13: Summary
 
