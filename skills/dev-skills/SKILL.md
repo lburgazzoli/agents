@@ -34,7 +34,11 @@ Based on https://generativeprogrammer.com/p/9-principles-that-separate-useful
 
 5. **Anticipate the excuse** — Preemptively address rationalizations the model might use to skip critical steps. Write rebuttals directly into the skill — the model struggles to argue past counter-arguments in its own context.
 
-6. **Code over inference** — Move deterministic work into scripts (`scripts/`). Invoke via Bash; only output enters context. Keeps behavior consistent and source hidden.
+6. **Code over inference** — Move deterministic work into scripts (`scripts/`). Invoke via Bash; only output enters context. Keeps behavior consistent and source hidden. Scripts must declare dependencies inline so the skill stays self-contained:
+   - **Go**: `go run <module>@<version>` — runs without installing
+   - **Python**: `uv run` with PEP 723 inline metadata (`# /// script` / `dependencies = [...]`) — declares deps in the script file itself, no `requirements.txt` or venv needed
+   
+   Never require the consumer to install dependencies or manage environments separately.
 
 7. **Stay in scope** — Touch only what the skill is asked to touch. No adjacent refactors, no modernization side-quests. Narrow diffs are reviewable and mergeable.
 
