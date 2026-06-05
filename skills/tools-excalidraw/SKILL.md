@@ -1,6 +1,6 @@
 ---
 name: tools-excalidraw
-description: Create Excalidraw diagram JSON files for Obsidian. Use when the user wants to visualize workflows, architectures, or concepts as diagrams.
+description: Create Excalidraw diagrams — local .excalidraw.md files for Obsidian, or remote scenes via Excalidraw+ MCP. Use when the user wants to visualize workflows, architectures, or concepts as diagrams, or read/edit Excalidraw+ workspace scenes.
 user-invocable: true
 ---
 
@@ -111,3 +111,41 @@ tags: [excalidraw]
 ```
 
 See `references/obsidian-export.md` for label binding details.
+
+---
+
+## Excalidraw+ MCP (Remote Scenes)
+
+When the Excalidraw+ MCP server is connected (`mcp__excalidraw__*` tools available), you can read and edit scenes in the user's Excalidraw+ workspace directly.
+
+### ID format
+
+Scene references use `workspaceId/sceneId`. Use the second part as `sceneId` in MCP calls:
+- `3QLu4fXJUVF/6wV360WmcHX` → `get_scene(sceneId: "6wV360WmcHX")`
+
+### Tool selection
+
+| Goal | Tool |
+|---|---|
+| Scene metadata (name, dates, element count) | `get_scene` |
+| Find specific shapes or text | `search_scene_content` — filter by `types` (frame, text, rectangle, etc.) |
+| Full scene payload or real persisted element IDs | `get_scene_content` |
+| Before first write in a session | `read_excalidraw_format` (mandatory) |
+| Add, update, or delete elements | `edit_scene_content` |
+
+Prefer `search_scene_content` over `get_scene_content` — it returns only matching elements, avoiding large payloads.
+
+### Reading presentations
+
+Frames with `customData.slidesOrder` are slides. To read a presentation:
+
+1. `search_scene_content` with `types: ["frame"]` → get slide structure and frame IDs
+2. `search_scene_content` with `types: ["text"]` → get all text, grouped by `frameId`
+3. Match text elements to frames via `frameId` to reconstruct slide content
+
+### Writing rules
+
+- Never include `id` in `add` payloads — use `tempId` for same-request references
+- Use real persisted IDs for `update` and `delete`
+- Shape-owned text must use `label`, not a floating text element
+- Arrows pointing at shapes must include explicit `startBinding`/`endBinding`
