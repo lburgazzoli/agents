@@ -1,12 +1,3 @@
----
-name: dev-go-patterns-functional-options
-description: >
-  Go functional options pattern — naming, structure, composition, and testing conventions.
-  Triggers when implementing constructors with optional configuration, adding options to
-  existing types, or refactoring builder patterns to functional options in Go code.
-user-invocable: false
----
-
 # Functional Options Pattern
 
 Use functional options for any Go constructor that accepts optional configuration. Never use builder patterns.
