@@ -2,7 +2,7 @@
 name: agentready
 description: Assess a repository for AI-assisted development readiness using AgentReady.
   Accepts a local path, GitHub owner/repo, full GitHub URL, or "." for the current
-  directory. Use when the user asks to assess, score, or evaluate a repo's agent-readiness.
+  directory. Use when the user asks to assess, score, or evaluate a repository's agent-readiness.
 ---
 
 # AgentReady Assessment
@@ -13,7 +13,7 @@ Assess a git repository for AI-assisted development readiness using the AgentRea
 
 `$ARGUMENTS` contains the target:
 - Empty or `.` — assess the current working directory
-- `/absolute/path` — assess a local repo at that path
+- `/absolute/path` — assess a local repository at that path
 - `owner/repo [branch]` — clone from GitHub and assess (default branch if omitted)
 - `https://github.com/owner/repo [branch]` — clone from GitHub and assess
 
@@ -36,7 +36,7 @@ Optional flags appended after the target:
 
 3. **Prepare output directory**
    If `--output-dir` was provided, use that path as `OUTPUT_DIR`.
-   Otherwise, derive `REPO_NAME` from the repo directory name and `BRANCH` from `git -C <REPO_PATH> rev-parse --abbrev-ref HEAD`, then set `OUTPUT_DIR` to `.context/agentready/${REPO_NAME}@${BRANCH}`.
+   Otherwise, derive `REPO_NAME` from the repository directory name and `BRANCH` from `git -C <REPO_PATH> rev-parse --abbrev-ref HEAD`, then set `OUTPUT_DIR` to `.context/agentready/${REPO_NAME}@${BRANCH}`.
    ```bash
    mkdir -p "${OUTPUT_DIR}"
    ```
@@ -84,4 +84,4 @@ Optional flags appended after the target:
 
 - **SELinux / permission errors**: the command already uses `:Z` mounts, `--userns=keep-id`, and `--user` flags for rootless podman
 - **Git dubious ownership**: the `GIT_CONFIG_*` env vars handle this
-- **Large repos**: agentready may warn about repo size; pass `-i` to the assess command if interactive confirmation is needed (not typical in container mode)
+- **Large repositories**: agentready may warn about repository size; pass `-i` to the assess command if interactive confirmation is needed (not typical in container mode)

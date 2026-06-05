@@ -37,7 +37,7 @@ Prefer `rg` over `grep -r` and `find -name` for all code-search and file-discove
 
 ## File discovery: rg --files replaces find
 
-For locating files by name or extension within a code repository, `rg --files` is faster and automatically excludes `.gitignore`-listed paths.
+For locating files by name or extension within a repository, `rg --files` is faster and automatically excludes `.gitignore`-listed paths.
 
 ```bash
 # list all Go files (replaces: find . -name "*.go")
@@ -162,10 +162,10 @@ rg -m 1 'context\.Context' -t go
 |--------|-----|------------|
 | `find . -name "*.go" \| xargs grep 'pat'` | Two processes, no .gitignore respect, quoting issues | `rg -t go 'pat'` |
 | `grep -r 'pattern' .` | Searches .git, vendor, node_modules; no type filtering | `rg 'pattern'` |
-| `find . -type f` for file listing in code repos | No .gitignore, includes binary/generated files | `rg --files` |
+| `find . -type f` for file listing in code repositories | No .gitignore, includes binary/generated files | `rg --files` |
 | `rg 'pattern' \| grep 'filter'` | Piping rg to grep; rg can filter itself | `rg 'pattern' -g 'glob'` or `rg 'pattern' path/` |
 | `rg 'pattern' \| wc -l` for file count | Counts lines of output, not files | `rg -l 'pattern' \| wc -l` or `rg -c 'pattern'` |
-| `rg 'pattern'` without path/type scope in large repos | Unbounded search floods context | Add `-t type`, `-g glob`, or a directory argument |
+| `rg 'pattern'` without path/type scope in large repositories | Unbounded search floods context | Add `-t type`, `-g glob`, or a directory argument |
 | `rg --files \| grep '\.go$'` | Shell grep on file list; rg has built-in globs | `rg --files -g '*.go'` or `rg --files -t go` |
 | `rg -e 'a' \| rg -e 'b'` for AND logic | Pipe loses file context, two processes | `rg 'a' -l \| xargs rg 'b'` or `rg 'a.*b\|b.*a'` |
 

@@ -2,9 +2,9 @@
 name: dev-context
 description: >
   MANDATORY conventions for cloning any git repository or checking out any branch/tag/ref.
-  Triggers on: "clone", "git clone", "checkout repo", "fetch repo", "pull repo",
+  Triggers on: "clone", "git clone", "checkout repository", "fetch repository", "pull repository",
   "clone this", "clone <url>", "get the source for", any GitHub URL intended for cloning,
-  any task that needs a local copy of a remote repository, working with .context/repos/,
+  any task that needs a local copy of a remote repository, working with .context/repos/ paths,
   upgrade assessments, or ad-hoc diffs across refs.
   ALL repository clones MUST go into .context/repos/ — never clone to the current directory,
   /tmp, or any other location.
@@ -15,7 +15,7 @@ user-invocable: false
 
 ## Working Directory Conventions
 
-- Cloned reference repos and tooling dependencies live under `.context/repos/<org>/`. Skills such as `rhai-upgrade-assessment` must follow the cloning rules below.
+- Cloned reference repositories and tooling dependencies live under `.context/repos/<org>/`. Skills such as `rhai-upgrade-assessment` must follow the cloning rules below.
 - If a temporary file needs to be created, use `.context/`
 
 ## Repository Cloning and Refs
@@ -42,7 +42,7 @@ git clone --depth 1 --single-branch --branch v0.2.0 https://github.com/kubeflow/
 ### Rules
 
 - **Always** clone to `.context/repos/<org>/<repo>@<branch>` — resolve the default branch name if none is specified. The `<org>` is the GitHub organization or user (e.g., `opendatahub-io`, `red-hat-data-services`, `kubeflow`).
-- If the repo is already cloned, **do not** switch branches in place — refresh with `git -C <path> pull --ff-only`. Stale clones produce stale results.
+- If the repository is already cloned, **do not** switch branches in place — refresh with `git -C <path> pull --ff-only`. Stale clones produce stale results.
 - For another ref, use a separate clone at `.context/repos/<org>/<repo>@<ref>`.
 - **Commit SHA** (after a clone that contains it): `git -C .context/repos/<org>/<repo>@<branch> fetch origin <sha> && git -C .context/repos/<org>/<repo>@<branch> checkout <sha>`
 

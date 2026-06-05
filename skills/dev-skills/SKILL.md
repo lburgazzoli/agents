@@ -6,7 +6,7 @@ user-invocable: false
 
 # Skill Authoring Guide
 
-## Example Repositories
+## Example repositories
 
 Consult these as sources of good skill examples:
 
