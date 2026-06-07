@@ -107,11 +107,11 @@ make uninstall   # Remove CRDs from cluster
 
 ## PROJECT File Metadata
 
-Test configuration is stored in `plugins.dev-kubebuilder.lburgazzoli.github.io/v1`:
+Test configuration is stored in `plugins.dev-k8s-kubebuilder.lburgazzoli.github.io/v1`:
 
 ```yaml
 plugins:
-  dev-kubebuilder.lburgazzoli.github.io/v1:
+  dev-k8s-kubebuilder.lburgazzoli.github.io/v1:
     testEnvironment: k3senvtest  # or envtest
     testStyle: gomega            # or ginkgo
 ```

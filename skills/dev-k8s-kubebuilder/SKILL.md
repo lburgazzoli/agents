@@ -1,11 +1,11 @@
 ---
-name: dev-kubebuilder
+name: dev-k8s-kubebuilder
 description: >
   Scaffold multi-API Kubebuilder projects with multigroup layout, webhooks, and
   API versioning. Use when the user asks to create a Kubernetes operator, scaffold
   a CRD project, add APIs, CRDs, or webhooks to a kubebuilder project, or set up
   a multi-group controller-runtime project. Triggers on: kubebuilder, operator,
-  CRD, custom resource, controller-runtime, multi-group, conversion webhook.
+  CRD, custom resource, multi-group, conversion webhook, kubebuilder scaffold.
 user-invocable: true
 allowed-tools:
   - Read
@@ -21,7 +21,7 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 
 **References** — read on demand, not upfront:
 - [markers](references/markers.md) — CRD, validation, RBAC, webhook markers, cluster-scoped resources
-- [patterns](references/patterns.md) — reconciler patterns, multigroup layout, external types, SetupWithManager
+- [patterns](references/patterns.md) — kubebuilder-specific patterns: field indexing, watching external types, multigroup layout, SetupWithManager
 - [api-versioning](references/api-versioning.md) — hub-spoke conversion, storage version, deprecation
 - [k3senvtest](references/e2e-k3senvtest.md) — k3s-envtest environment: Makefile, webhooks, gotchas
 - [envtest](references/e2e-envtest.md) — standard envtest environment: Makefile, limitations
@@ -87,7 +87,7 @@ All kubebuilder commands below use `go run sigs.k8s.io/kubebuilder/v4/cmd@latest
 Check for a `PROJECT` file in the current directory.
 
 - **If `PROJECT` exists** → existing project. Read it to understand domain, layout, and existing APIs. Detect test configuration:
-  1. Check `plugins.dev-kubebuilder.lburgazzoli.github.io/v1` in the PROJECT file for stored choices.
+  1. Check `plugins.dev-k8s-kubebuilder.lburgazzoli.github.io/v1` in the PROJECT file for stored choices.
   2. If not present, auto-detect by scanning test files with ripgrep **in this order** (earlier match wins, since gomega is also used inside ginkgo projects):
      1. `rg -l '//go:build e2e' test/` → kind (e2e build tag in `test/` directory)
      2. `rg -l 'k3senv\.New\(' internal/` → k3senvtest
@@ -113,7 +113,7 @@ Always use `--multigroup` — it's easier to add API groups later than to migrat
 After init, store the selected test configuration in the PROJECT file:
 
 ```bash
-yq '.plugins."dev-kubebuilder.lburgazzoli.github.io/v1" = {"testEnvironment": "<envtest|k3senvtest|kind>", "testStyle": "<gomega|ginkgo>"}' -i PROJECT
+yq '.plugins."dev-k8s-kubebuilder.lburgazzoli.github.io/v1" = {"testEnvironment": "<envtest|k3senvtest|kind>", "testStyle": "<gomega|ginkgo>"}' -i PROJECT
 ```
 
 This persists the choices so future invocations of this skill auto-detect them from the PROJECT file.
@@ -174,7 +174,7 @@ Fix any compilation errors before proceeding.
 
 ### Step 9: Implement reconciler skeleton
 
-Read [patterns](references/patterns.md) before implementing.
+Read the `dev-k8s-controller` skill references for controller implementation patterns (reconciliation, status conditions, ownership, RBAC, error handling). Read [patterns](references/patterns.md) for kubebuilder-specific patterns (field indexing, watching external types, SetupWithManager).
 
 For each controller, scaffold:
 - `SetupWithManager` with `For()`, `Owns()`, and `Watches()` for each owned/watched type
