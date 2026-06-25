@@ -213,6 +213,21 @@ gws sheets spreadsheets values get --params '{"spreadsheetId": "ID", "range": "S
 | Google Slides | `application/vnd.google-apps.presentation` |
 | Folder | `application/vnd.google-apps.folder` |
 
+## Authentication
+
+### Login with readonly scopes
+
+To authenticate with read-only access across all GWS services:
+
+```bash
+gws auth login \
+  --scopes "https://www.googleapis.com/auth/calendar.readonly,https://www.googleapis.com/auth/documents.readonly,https://www.googleapis.com/auth/drive.readonly,https://www.googleapis.com/auth/gmail.readonly,https://www.googleapis.com/auth/presentations.readonly,https://www.googleapis.com/auth/spreadsheets.readonly,https://www.googleapis.com/auth/tasks.readonly,email,profile,openid"
+```
+
+This grants read-only access to Calendar, Docs, Drive, Gmail, Slides, Sheets, and Tasks without write permissions.
+
+---
+
 ## Schema discovery
 
 Use `gws schema` to discover API parameters for any method:
