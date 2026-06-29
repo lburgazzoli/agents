@@ -185,6 +185,24 @@ gws slides presentations get --params '{"presentationId": "PRES_ID"}' \
   | jq -r '.slides[] | [.pageElements[]? | .shape?.textContent?.textElements[]? | .textRun?.content? // empty] | join("")'
 ```
 
+### Sheets — list all tab names
+
+Use this before reading a spreadsheet when you don't know the sheet names:
+
+```bash
+gws sheets spreadsheets get \
+  --params '{"spreadsheetId": "ID", "fields": "sheets.properties.title"}' \
+  | jq -r '.sheets[].properties.title'
+```
+
+To get all sheet metadata (sheetId, title, index):
+
+```bash
+gws sheets spreadsheets get \
+  --params '{"spreadsheetId": "ID", "fields": "sheets.properties"}' \
+  | jq '.sheets[].properties'
+```
+
 ### Sheets — resolve gid= to tab name
 
 When a URL contains `gid=`, resolve it to a tab name before reading:
@@ -212,6 +230,23 @@ gws sheets spreadsheets values get --params '{"spreadsheetId": "ID", "range": "S
 | Google Sheets | `application/vnd.google-apps.spreadsheet` |
 | Google Slides | `application/vnd.google-apps.presentation` |
 | Folder | `application/vnd.google-apps.folder` |
+
+## Troubleshooting
+
+### "API not enabled" error despite having the OAuth scope
+
+Having `spreadsheets.readonly` (or any GWS scope) in your OAuth token does **not** mean the underlying API is enabled in the GCP project. These are two separate controls:
+
+- **OAuth scope** — what the user consented to share
+- **GCP API** — whether the API is activated in the project
+
+If you see `Google Sheets API has not been used in project <project-id> before or it is disabled`, enable it at:
+```
+https://console.developers.google.com/apis/api/sheets.googleapis.com/overview?project=<project-id>
+```
+Then wait ~2 minutes and retry. The same applies to other APIs (Drive, Gmail, Calendar, etc.).
+
+---
 
 ## Authentication
 
