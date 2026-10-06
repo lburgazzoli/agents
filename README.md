@@ -17,7 +17,7 @@ npx skills add lburgazzoli/agents
 | `dev-context` | Conventions for cloning git repos into `.context/repos/` |
 | `dev-gh` | GitHub CLI (gh) read patterns with a mandatory confirmation gate for writes |
 | `dev-git` | Git history exploration and composed git commands |
-| `dev-go-patterns` | Go design patterns (functional options, etc.) |
+| `dev-go-patterns` | Go design patterns (functional options, switch over if chains, etc.) |
 | `dev-go-project` | Working in Go projects with Makefiles |
 | `dev-go-project-new` | Bootstrap new Go projects |
 | `dev-go-testing` | Gomega usage in Go tests (assertions, async, matchers) |
