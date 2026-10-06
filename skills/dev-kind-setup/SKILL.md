@@ -1,8 +1,9 @@
 ---
 name: dev-kind-setup
-description: Create a Kind cluster and install the latest cert-manager.
+description: Create a Kind cluster and install the latest cert-manager. Use when the user asks to create, start, or set up a local Kind cluster, or needs a throwaway Kubernetes cluster with cert-manager for testing webhooks or operators.
 user-invocable: true
-allowed-tools: "Bash"
+allowed-tools:
+  - Bash
 ---
 
 # Kind Cluster Setup
@@ -11,11 +12,11 @@ Create a Kind (Kubernetes in Docker) cluster with cert-manager installed.
 
 ## Input
 
-`$ARGUMENTS` contains an optional cluster name (default: `kind`).
+The user's request may name the cluster (default: `kind`).
 
 ## Steps
 
-1. Run `kind create cluster --name <cluster-name>`. Use the name from `$ARGUMENTS` if provided, otherwise default to `kind`.
+1. Run `kind create cluster --name <cluster-name>`. Use the name the user gave, otherwise default to `kind`.
 2. Wait for nodes to be `Ready`:
    ```
    kubectl wait --for=condition=Ready nodes --all --timeout=60s

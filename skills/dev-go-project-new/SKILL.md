@@ -19,20 +19,20 @@ Bootstrap a new Go project with standard tooling: `go.mod`, Makefile, `.golangci
 
 ## Input
 
-`$ARGUMENTS` must contain the Go module path (e.g., `github.com/user/project`). Additional customization requests are optional.
+The user's request must give the Go module path (e.g., `github.com/user/project`). Additional customization requests are optional.
 
-If `$ARGUMENTS` is empty, ask the user for the module path before proceeding.
+If no module path was given, ask the user for the module path before proceeding.
 
 ## Steps
 
 1. Determine the project directory. If the current directory is empty or the user specified a name, use that. Otherwise, confirm with the user.
-2. Run `go mod init <module-path>` using the module path from `$ARGUMENTS`.
+2. Run `go mod init <module-path>` using that module path.
 3. Read the Makefile template from [Makefile.tmpl](assets/Makefile.tmpl).
 4. Resolve tool versions: look up the latest stable release for each tool (`golangci-lint`, `govulncheck`) and replace the placeholder versions in the template. Use `go list -m -versions <module>` or check the tool's release page to find the current stable version.
 5. Write the Makefile to the project root. If one already exists, ask before overwriting.
 6. Read [.golangci.yml](assets/.golangci.yml) and write it to the project root. If one already exists, ask before overwriting.
 7. Read [.gitignore](assets/.gitignore) and write it to the project root. If one already exists, ask before overwriting.
-8. If `$ARGUMENTS` mentions additional targets or customizations, add them following the Makefile conventions (`.PHONY`, `##` comment for help, `go run` for tools, version variable at the top).
+8. If the request mentions additional targets or customizations, add them following the Makefile conventions (`.PHONY`, `##` comment for help, `go run` for tools, version variable at the top).
 9. Run `make help` to confirm the Makefile works and show available targets to the user.
 
 ## Makefile Conventions

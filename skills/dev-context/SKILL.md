@@ -15,7 +15,7 @@ user-invocable: false
 
 ## Working Directory Conventions
 
-- Cloned reference repositories and tooling dependencies live under `.context/repos/<org>/`. Skills such as `rhai-upgrade-assessment` must follow the cloning rules below.
+- Cloned reference repositories and tooling dependencies live under `.context/repos/<org>/`. Any skill or task that needs a local copy of a repository must follow the cloning rules below.
 - If a temporary file needs to be created, use `.context/`
 
 ## Repository Cloning and Refs
@@ -37,6 +37,14 @@ git clone --depth 1 --single-branch https://github.com/kubeflow/model-registry .
 
 # Example: clone a specific branch
 git clone --depth 1 --single-branch --branch v0.2.0 https://github.com/kubeflow/model-registry .context/repos/kubeflow/model-registry@v0.2.0
+```
+
+The bundled [clone.sh](scripts/clone.sh) applies this layout in one step: it resolves the default branch when none is given, clones shallow, fast-forwards an existing clone, and prints the clone path. The path is relative to this skill's directory.
+
+```bash
+scripts/clone.sh --repo kubeflow/model-registry                    # default branch
+scripts/clone.sh --repo kubeflow/model-registry --branch v0.2.0    # specific branch/tag
+scripts/clone.sh --repo https://github.com/kubeflow/model-registry # full URL
 ```
 
 ### Rules
@@ -66,5 +74,17 @@ git clone --depth 1 --single-branch --branch my-feature \
 
 3. Follow the standard `<org>/<repo>@<branch>` directory convention — `<org>` is the **head owner** (fork owner), not the upstream org.
 
-### Git worktree (optional, from the default clone after it exists): `git -C .context/repos/<org>/<repo> worktree add <path> <ref>` with `<path>` under `.context/repos/<org>/` (e.g. `opendatahub-io/odh-gitops-wt-rhoai-3.3` alongside the main repo). Use when you want one object database and multiple checkouts. **When the task is finished, remove the worktree** so `.context/` does not accumulate cruft: `git -C .context/repos/<org>/<repo> worktree remove <path>` (or `git worktree remove` from the worktree path), then `git -C .context/repos/<org>/<repo> worktree prune` if needed. Failed or abandoned runs should still be cleaned up.
+### Git worktree (optional)
 
+Use a worktree when you want one object database and multiple checkouts. Create it from the default clone after it exists, with `<path>` under `.context/repos/<org>/` (e.g. `opendatahub-io/odh-gitops-wt-rhoai-3.3` alongside the main repo):
+
+```bash
+git -C .context/repos/<org>/<repo>@<branch> worktree add <path> <ref>
+```
+
+**When the task is finished, remove the worktree** so `.context/` does not accumulate cruft. Failed or abandoned runs should still be cleaned up.
+
+```bash
+git -C .context/repos/<org>/<repo>@<branch> worktree remove <path>
+git -C .context/repos/<org>/<repo>@<branch> worktree prune   # if needed
+```

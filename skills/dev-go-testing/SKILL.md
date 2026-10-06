@@ -42,7 +42,7 @@ Source of truth for URLs: [references/resources.md](references/resources.md)
 To refresh a reference file when the Gomega library updates:
 
 1. Read `references/resources.md` — find the canonical URL for the section to update.
-2. Fetch the relevant section from `https://onsi.github.io/gomega/` using WebFetch.
+2. Fetch the relevant section from `https://onsi.github.io/gomega/`.
 3. Diff the fetched content against the existing reference file.
 4. Update only changed parts; preserve project-specific notes and "Project convention" callouts.
 5. `k8s-matchers.md` is sourced from `github.com/lburgazzoli/gomega-matchers` — update separately.

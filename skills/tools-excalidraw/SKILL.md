@@ -116,7 +116,7 @@ See `references/obsidian-export.md` for label binding details.
 
 ## Excalidraw+ MCP (Remote Scenes)
 
-When the Excalidraw+ MCP server is connected (`mcp__excalidraw__*` tools available), you can read and edit scenes in the user's Excalidraw+ workspace directly.
+When the Excalidraw+ MCP server is connected (its tools are in the available tool list), you can read and edit scenes in the user's Excalidraw+ workspace directly.
 
 ### ID format
 

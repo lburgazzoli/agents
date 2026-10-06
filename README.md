@@ -13,12 +13,14 @@ npx skills add lburgazzoli/agents
 | Skill | Description |
 |-------|-------------|
 | `agentready` | Assess repository AI-assisted development readiness |
+| `dev-agent-loops` | Agent loop design patterns (loop types, stop conditions, verification) |
 | `dev-context` | Conventions for cloning git repos into `.context/repos/` |
 | `dev-gh` | GitHub CLI (gh) read patterns with a mandatory confirmation gate for writes |
 | `dev-git` | Git history exploration and composed git commands |
 | `dev-go-patterns` | Go design patterns (functional options, etc.) |
 | `dev-go-project` | Working in Go projects with Makefiles |
 | `dev-go-project-new` | Bootstrap new Go projects |
+| `dev-go-testing` | Gomega usage in Go tests (assertions, async, matchers) |
 | `dev-k8s-controller` | Kubernetes controller implementation best practices (controller-runtime) |
 | `dev-k8s-kubebuilder` | Scaffold multi-API Kubebuilder projects with multigroup layout and webhooks |
 | `dev-kind-setup` | Create Kind cluster with cert-manager |

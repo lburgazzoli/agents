@@ -11,7 +11,7 @@ Assess a git repository for AI-assisted development readiness using the AgentRea
 
 ## Input
 
-`$ARGUMENTS` contains the target:
+The user's request names the target:
 - Empty or `.` — assess the current working directory
 - `/absolute/path` — assess a local repository at that path
 - `owner/repo [branch]` — clone from GitHub and assess (default branch if omitted)

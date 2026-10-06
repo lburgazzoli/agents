@@ -113,16 +113,12 @@ git rev-list --count origin/main..HEAD
 git log -S'SymbolName' --all --oneline --source
 
 # Cross-directory: any git command works with -C
-git -C .context/repos/opendatahub-io/kserve log --oneline -n 10
-git -C .context/repos/opendatahub-io/odh-cli diff main...feature --stat
-git -C .context/repos/red-hat-data-services/odh-gitops blame -L 1,20 -- components/operators/kserve/kustomization.yaml
-git -C .context/repos/opendatahub-io/architecture-context pull --ff-only
+git -C .context/repos/opendatahub-io/kserve@master log --oneline -n 10
+git -C .context/repos/opendatahub-io/odh-cli@main diff main...feature --stat
+git -C .context/repos/red-hat-data-services/odh-gitops@main blame -L 1,20 -- components/operators/kserve/kustomization.yaml
+git -C .context/repos/opendatahub-io/architecture-context@main pull --ff-only
 
-# Clone or refresh a repo into .context/repos/<org>/<repo>@<branch>
-# Resolves default branch automatically if branch is omitted
-skills/dev-git/scripts/clone.sh --repo owner/repo                          # default branch
-skills/dev-git/scripts/clone.sh --repo owner/repo --branch v2.0            # specific branch/tag
-skills/dev-git/scripts/clone.sh --repo owner/repo --output .context/bar    # custom output dir
+# Cloning or refreshing a repo: follow the dev-context skill (.context/repos/<org>/<repo>@<branch>)
 
 # Worktrees — create under $(project-directory)/.worktrees/
 git worktree add .worktrees/my-feature -b my-feature

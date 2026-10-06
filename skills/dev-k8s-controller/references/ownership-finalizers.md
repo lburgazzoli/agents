@@ -1,5 +1,7 @@
 # Ownership and Finalizers
 
+**MUST** not remove a finalizer before cleanup completes. Once the finalizer is gone the resource is deleted, so any external cleanup that has not succeeded never finishes. See [Finalizers](#finalizers) for the ordering.
+
 ## Owner References
 
 **SHOULD** set owner references on all child resources. This enables garbage collection when the owner is deleted and triggers reconciliation when owned resources change.
@@ -31,7 +33,7 @@ func (r *WidgetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 Use finalizers when the controller must clean up external resources on deletion. The pattern has strict ordering requirements.
 
-**MUST** not remove the finalizer before cleanup completes. Removing the finalizer before external cleanup succeeds means the resource is deleted and cleanup never finishes.
+Remove the finalizer only after external cleanup has succeeded; removing it earlier lets the resource be deleted while cleanup is still pending.
 
 **SHOULD** gate external cleanup with a finalizer. If the controller performs external cleanup on deletion but does not use a finalizer, Kubernetes may delete the resource before cleanup runs.
 

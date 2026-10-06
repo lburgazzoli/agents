@@ -9,7 +9,7 @@ Recursively walk a Jira issue's hierarchy and collect related issues that match 
 
 ## Input
 
-`$ARGUMENTS` contains:
+The user's request contains:
 - **Required:** issue key (e.g. `RHAISTRAT-1235`)
 - **Optional:** `component=<name>` (default: `AI Core Platform`)
 - **Optional:** `team=<label-prefix>` (default: `aicp-team-`)
@@ -17,9 +17,9 @@ Recursively walk a Jira issue's hierarchy and collect related issues that match 
 
 ## Tool Selection
 
-**Prefer MCP** (if `mcp__jira__*` tools are available):
-- Single issue: `mcp__jira__getJiraIssue` with `fields: ["summary", "status", "issuetype", "components", "labels", "parent", "issuelinks"]`
-- Child search: `mcp__jira__searchJiraIssuesUsingJql` with JQL `parent = <key> AND status not in (Closed, Resolved)` and `fields: ["summary", "status", "issuetype", "components", "labels"]`
+**Prefer MCP** (if the Jira MCP server tools are available):
+- Single issue: `getJiraIssue` with `fields: ["summary", "status", "issuetype", "components", "labels", "parent", "issuelinks"]`
+- Child search: `searchJiraIssuesUsingJql` with JQL `parent = <key> AND status not in (Closed, Resolved)` and `fields: ["summary", "status", "issuetype", "components", "labels"]`
 - Issue links: include `"issuelinks"` in `fields` of `getJiraIssue` (no separate list-links tool in MCP)
 - See `tools-jira-mcp` skill for cloudId resolution and pagination
 

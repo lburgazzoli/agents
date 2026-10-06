@@ -6,7 +6,7 @@ user-invocable: false
 
 # Jira CLI Guidelines
 
-Use `acli` when MCP Jira tools (`mcp__jira__*`) are not available. The `jira-query` and `jira-tree` skills delegate here as a fallback.
+Use `acli` when the Jira MCP server tools are not available. The `jira-query` and `jira-tree` skills delegate here as a fallback.
 
 ## Content conventions
 

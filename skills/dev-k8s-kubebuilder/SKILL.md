@@ -38,7 +38,7 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 
 ## Input
 
-`$ARGUMENTS` should contain the project specification:
+The user's request should contain the project specification:
 
 - **domain** — API group domain (e.g., `example.com`)
 - **module** — Go module path (e.g., `github.com/user/my-operator`)
@@ -57,7 +57,7 @@ Scaffold or extend a Kubebuilder operator project with multiple API groups, webh
 
 Example: `domain=example.com module=github.com/acme/op api=apps/v1alpha1/Widget+webhook +k3senvtest +gomega`
 
-If `$ARGUMENTS` is empty or incomplete, ask the user for the missing pieces:
+If the specification is missing or incomplete, ask the user for the missing pieces:
 1. Go module path
 2. API domain
 3. First API (group, version, kind)
@@ -107,8 +107,6 @@ Present a summary table to the user and ask for confirmation before proceeding:
 ```bash
 go run sigs.k8s.io/kubebuilder/v4/cmd@latest init --domain <domain> --repo <module> --multigroup
 ```
-
-Always use `--multigroup` — it's easier to add API groups later than to migrate the layout.
 
 After init, store the selected test configuration in the PROJECT file:
 
@@ -206,7 +204,7 @@ make test
 If tests fail:
 - **k3senvtest**: read [k3senvtest](references/e2e-k3senvtest.md). Common issues: container runtime not available (see `dev-testcontainers` skill), k3s image not cached (first run pulls it).
 - **envtest**: check `KUBEBUILDER_ASSETS` path, verify CRD directory paths are correct for multigroup layout.
-- **kind**: run `make kind-create`, then `make container-build container-push`, `make deploy-kustomize`, `make test-e2e`. Common issues: container runtime not available, image not pushed (Kind needs to pull from a registry), cert-manager not ready yet, `KUBECONFIG` not set to `.kube/config`.
+- **kind**: read [kind](references/e2e-kind.md) for the target order and setup. Common issues: image not pushed (Kind pulls from a registry), cert-manager not ready, `KUBECONFIG` not set to `.kube/config`.
 
 ### Step 13: Summary
 
@@ -226,6 +224,6 @@ Kubebuilder's Makefile is the project's build system — use `dev-go-project` fo
 
 5. **RBAC markers go on the reconciler's `Reconcile` method**, not on the types.
 
-6. **`dev-go-project-new` Makefile conventions apply.** Kubebuilder generates a Makefile that downloads binaries into `bin/`. Step 10 patches it to use `go run <module>@<version>` with pinned `_VERSION` variables — the same conventions as `dev-go-project-new`. Never use `go install` or `@latest`.
+6. **`dev-go-project-new` Makefile conventions apply.** Kubebuilder generates a Makefile that downloads binaries into `bin/`. Step 10 patches it to use `go run <module>@<version>` with pinned `_VERSION` variables. Never use `go install` or `@latest`.
 
 7. **Test style is selectable.** If `+gomega` is selected, rewrite kubebuilder's Ginkgo tests to vanilla Go tests. If `+ginkgo` is selected, keep the scaffolded test structure. Either way, use dot imports for Gomega: `import . "github.com/onsi/gomega"`

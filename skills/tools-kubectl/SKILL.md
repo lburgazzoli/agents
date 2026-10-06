@@ -8,6 +8,18 @@ user-invocable: false
 
 Prefer `kubectl` for all standard Kubernetes operations. Use `oc` only for subcommands that have no kubectl equivalent (`oc login`). Always minimize output. Never dump full resources. Use jq as the only external processing tool — no python, awk, or grep on kubectl output.
 
+## Writes
+
+Reads (`get`, `diff`, `wait`, `logs`, `auth`, `api-resources`, `config view`) need no confirmation. `apply`, `create`, `delete`, `patch`, `edit`, `replace`, `scale`, `rollout restart|undo`, `label`, `annotate`, `drain`, `cordon`, and `oc login|project` change the cluster or the active context, which may be shared or production.
+
+Before a write:
+
+1. Check the target with `kubectl config current-context` and state the namespace explicitly with `-n`.
+2. Show the user the exact command; for manifests, run `kubectl diff -f` first and show the result.
+3. Wait for an explicit yes, then run exactly that. One confirmation covers one command.
+
+A cluster the user asked to be created for the task (e.g. a throwaway Kind cluster) is the exception: writes to it are part of the request.
+
 ## Output format decision tree
 
 | Need | Format | Example |

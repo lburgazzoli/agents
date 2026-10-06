@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Clone or update a GitHub repo into .context/repos/<repo>@<branch>.
+# Clone or update a git repo into .context/repos/<org>/<repo>@<branch>.
 # Uses git only — no gh CLI dependency.
 #
-# Usage: clone.sh --repo <owner/repo> [--branch <ref>] [--output <dir>]
-# Output: prints the absolute clone path to stdout
+# Usage: clone.sh --repo <owner/repo | url> [--branch <ref>] [--output <dir>]
+# Output: prints the clone path to stdout
 
 usage() {
-    echo "Usage: clone.sh --repo <owner/repo> [--branch <ref>] [--output <dir>]" >&2
+    echo "Usage: clone.sh --repo <owner/repo | url> [--branch <ref>] [--output <dir>]" >&2
     exit 1
 }
 
@@ -27,12 +27,27 @@ done
 
 [[ -z "${SLUG}" ]] && usage
 
-if [[ "${SLUG}" == https://* || "${SLUG}" == git@* ]]; then
-    URL="${SLUG%.git}.git"
-    REPO="$(basename "${SLUG}" .git)"
+SLUG="${SLUG%/}"
+SLUG="${SLUG%.git}"
+
+if [[ "${SLUG}" == *://* || "${SLUG}" == git@* ]]; then
+    URL="${SLUG}.git"
+    # https://host/org/repo and git@host:org/repo both end in <org>/<repo>
+    REPO_PATH="${SLUG#*://}"
+    REPO_PATH="${REPO_PATH#git@}"
+    REPO_PATH="${REPO_PATH/://}"
 else
     URL="https://github.com/${SLUG}.git"
-    REPO="${SLUG##*/}"
+    REPO_PATH="${SLUG}"
+fi
+
+REPO="${REPO_PATH##*/}"
+ORG="${REPO_PATH%/*}"
+ORG="${ORG##*/}"
+
+if [[ -z "${ORG}" || -z "${REPO}" || "${ORG}" == "${REPO_PATH}" ]]; then
+    echo "cannot derive <org>/<repo> from '${SLUG}'" >&2
+    exit 1
 fi
 
 if [[ -z "${BRANCH}" ]]; then
@@ -43,7 +58,7 @@ if [[ -n "${OUTPUT}" ]]; then
     CLONE_DIR="${OUTPUT}"
 else
     CONTEXT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.context/repos"
-    CLONE_DIR="${CONTEXT_DIR}/${REPO}@${BRANCH}"
+    CLONE_DIR="${CONTEXT_DIR}/${ORG}/${REPO}@${BRANCH}"
 fi
 
 mkdir -p "$(dirname "${CLONE_DIR}")"
@@ -51,7 +66,7 @@ mkdir -p "$(dirname "${CLONE_DIR}")"
 if [[ -d "${CLONE_DIR}" ]]; then
     git -C "${CLONE_DIR}" pull --ff-only -q
 else
-    git clone --depth 1 --single-branch --branch "${BRANCH}" "${URL}" "${CLONE_DIR}"
+    git clone -q --depth 1 --single-branch --branch "${BRANCH}" "${URL}" "${CLONE_DIR}"
 fi
 
 echo "${CLONE_DIR}"

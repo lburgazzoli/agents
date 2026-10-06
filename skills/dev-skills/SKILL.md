@@ -1,6 +1,6 @@
 ---
 name: dev-skills
-description: Guidance for creating and modifying Claude Code skills. Triggers when authoring new skills, improving existing ones, or reviewing skill quality.
+description: Guidance for creating and modifying agent skills. Triggers when authoring new skills, improving existing ones, or reviewing skill quality.
 user-invocable: false
 ---
 

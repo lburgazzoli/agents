@@ -1,23 +1,23 @@
 ---
 name: tools-jira-mcp
-description: Jira MCP tool patterns - tool selection, cloudId resolution, field formatting, and content conventions. Triggers when using mcp__jira__* tools.
+description: Jira MCP tool patterns - tool selection, cloudId resolution, field formatting, and content conventions. Triggers when using the Jira (Atlassian) MCP server tools.
 user-invocable: false
 ---
 
 # Jira MCP Patterns
 
-Reference for the Jira MCP server tools (`mcp__jira__*`).
+Reference for the Jira MCP server tools. Tool names below are the bare names the server exposes; agents prefix them differently (for example `mcp__jira__getJiraIssue` or `jira_getJiraIssue`), so match on the bare name.
 
 ## Availability
 
-MCP tools are present only when the Jira MCP server is connected (via `/mcp`). If `mcp__jira__*` tools are not in the available tool list, fall back to `acli` CLI - see `tools-jira-cli` skill.
+MCP tools are present only when the Jira MCP server is connected. If its tools are not in the available tool list, fall back to `acli` CLI - see `tools-jira-cli` skill.
 
 ## cloudId Resolution
 
 Most MCP tools require a `cloudId` parameter. Resolution strategy:
 
 1. Try the site hostname directly (e.g. `issues.redhat.com`) as `cloudId`
-2. If that fails, call `mcp__jira__getAccessibleAtlassianResources` to discover available cloud IDs
+2. If that fails, call `getAccessibleAtlassianResources` to discover available cloud IDs
 3. Reuse the resolved cloudId for all subsequent calls in the session
 
 Tools that do NOT require cloudId: `getAccessibleAtlassianResources`, `atlassianUserInfo`, `search`, `fetch`.

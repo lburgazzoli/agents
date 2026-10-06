@@ -23,6 +23,17 @@ Common mistakes:
 - Do NOT use unquoted keys (`{fileId: "..."}`) — always use `{"fileId": "..."}`
 - In zsh, double-quote sheet ranges: `--range "Sheet1!A1:D10"` (bare `!` triggers history expansion)
 
+## Writes
+
+Reads (`list`, `get`, `export`, `+read`, `+triage`, `+agenda`) need no confirmation. Anything that sends, creates, updates, shares, moves, or deletes does: emails and invites reach other people immediately and cannot be recalled.
+
+Before a write (`gmail +send`, `+reply`, `+forward`, `calendar +insert`, `drive ... create|update|delete`, `+upload`, `+append`, `+write`, permission changes):
+
+1. Show the user the exact command, including recipients and the full body or content.
+2. Wait for an explicit yes, then run exactly that. One confirmation covers one command.
+
+Prefer `gmail +send --draft` when the user wants to review a message in Gmail first.
+
 ## Extracting IDs from Google URLs
 
 | Service | URL pattern | ID location |
