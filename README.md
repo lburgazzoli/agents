@@ -14,6 +14,7 @@ npx skills add lburgazzoli/agents
 |-------|-------------|
 | `agentready` | Assess repository AI-assisted development readiness |
 | `dev-context` | Conventions for cloning git repos into `.context/repos/` |
+| `dev-gh` | GitHub CLI (gh) read patterns with a mandatory confirmation gate for writes |
 | `dev-git` | Git history exploration and composed git commands |
 | `dev-go-patterns` | Go design patterns (functional options, etc.) |
 | `dev-go-project` | Working in Go projects with Makefiles |
