@@ -24,6 +24,7 @@ npx skills add lburgazzoli/agents
 | `dev-k8s-controller` | Kubernetes controller implementation best practices (controller-runtime) |
 | `dev-k8s-kubebuilder` | Scaffold multi-API Kubebuilder projects with multigroup layout and webhooks |
 | `dev-kind-setup` | Create Kind cluster with cert-manager |
+| `dev-openshift-ci` | Retrieve and analyze OpenShift CI (Prow) job failures on a pull request |
 | `dev-skills` | Skill authoring guide |
 | `dev-testcontainers` | Testcontainers setup with Podman/Docker |
 | `jira-query` | Query Jira issues (natural language, JQL, or issue key) |
