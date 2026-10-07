@@ -6,6 +6,34 @@ Read-only recipes for questions that need several fields in one call or hide a t
 - Add `-R OWNER/REPO` when not in the repo's checkout.
 - `gh api` paths fill `{owner}` and `{repo}` from the cwd remotes; write them literally outside the checkout.
 
+## What is the state of the open PRs in this repo?
+
+```bash
+gh pr list -L 50 --json number,title,author,isDraft,reviewDecision,mergeable,updatedAt,statusCheckRollup --jq '
+  def result: (.conclusion // .state);
+  .[]
+  | (.statusCheckRollup | {
+      failed:  (map(select(result | IN("FAILURE","ERROR","TIMED_OUT","CANCELLED","ACTION_REQUIRED","STARTUP_FAILURE"))) | length),
+      running: (map(select(.state == "PENDING" or (.status != null and .status != "COMPLETED"))) | length),
+      total:   length}) as $c
+  | [.number, .author.login,
+     (if .isDraft then "DRAFT" elif .reviewDecision == "" then "-" else .reviewDecision end),
+     .mergeable,
+     (if $c.total == 0 then "no-checks" elif $c.failed > 0 then "\($c.failed)/\($c.total) failed" elif $c.running > 0 then "\($c.running)/\($c.total) running" else "passing" end),
+     .updatedAt[0:10], .title]
+  | @tsv'
+```
+
+Returns one row per open PR — number, author, review state, mergeable, checks, last update, title. Empty output means no open PRs. This one call replaces looping `gh pr view` over the list.
+
+- `-L 50` is a cap, not a total: a result of exactly 50 rows may be truncated.
+- `statusCheckRollup` makes the query slow (about 8 seconds for 50 PRs) and a larger `-L` can fail with `HTTP 504`. For a repo with more open PRs, run it twice with `-L 40 --search "sort:created-desc"` and `-L 40 --search "sort:created-asc"`, and widen from there. Drop the field and the checks column when only review state is needed.
+- `mergeable` is often `UNKNOWN` in a list. Confirm with the merge-readiness recipe below before reporting a PR as blocked.
+- App authors appear as `app/dependabot`.
+- Narrow the scope with `--author @me`, `--search "review-requested:@me"`, `--draft=false`, or `--base <branch>`.
+
+When reporting, do not echo the table. Group the PRs by what needs attention and give a count for each group: ready to merge (`APPROVED`, `MERGEABLE`, `passing`), failing checks, `CONFLICTING`, waiting for review, drafts. Call out PRs that have not been updated for weeks. Use the recipes below only for the PRs the user wants to drill into.
+
 ## Which PR belongs to the current branch?
 
 ```bash

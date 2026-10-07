@@ -5,8 +5,9 @@ description: >
   confirmation gate for every write. Triggers when running any gh command,
   or when reading or changing GitHub pull requests, issues, discussions,
   releases, workflow runs, checks, review comments, labels, or repo contents:
-  "list PRs", "show issue", "PR checks", "why did CI fail", "review comments",
-  "search issues", "comment on the PR", "merge", "close the issue", "gh api".
+  "list PRs", "PR summary", "open PRs overview", "show issue", "PR checks",
+  "why did CI fail", "review comments", "search issues", "comment on the PR",
+  "merge", "close the issue", "gh api".
   Not for local git history (use dev-git) or cloning repos (use dev-context).
 ---
 
@@ -133,4 +134,4 @@ Recipes — verified read commands for questions that need several fields at onc
 
 | File | Read when |
 |------|-----------|
-| [references/recipes/pr.md](references/recipes/pr.md) | Finding the PR for a branch or commit; merge readiness and blockers; failing or pending checks (Actions and Prow); change size; unresolved review threads; who has to act next; linked issues |
+| [references/recipes/pr.md](references/recipes/pr.md) | Summary of the repo's open PRs; finding the PR for a branch or commit; merge readiness and blockers; failing or pending checks (Actions and Prow); change size; unresolved review threads; who has to act next; linked issues |
