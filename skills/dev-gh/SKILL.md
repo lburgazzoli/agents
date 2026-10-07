@@ -128,3 +128,9 @@ Read on demand:
 
 - [references/read.md](references/read.md) — JSON field shapes for issue types, sub-issues and relationships; discussions; `read-file`/`read-dir` details; templates; environment variables.
 - [references/write.md](references/write.md) — flags for the write commands (issue types and relationships, attachments, discussions, worktree checkouts). Read only after the user has asked for a write; the write gate still applies to every command in it.
+
+Recipes — verified read commands for questions that need several fields at once or hide a trap. One file per kind:
+
+| File | Read when |
+|------|-----------|
+| [references/recipes/pr.md](references/recipes/pr.md) | Finding the PR for a branch or commit; merge readiness and blockers; failing or pending checks (Actions and Prow); change size; unresolved review threads; who has to act next; linked issues |
