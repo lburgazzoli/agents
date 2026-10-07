@@ -56,7 +56,7 @@ Done when: you have one `gs_url` per job to analyze.
 scripts/main.py fetch <gs_url>          # prints the local run directory
 ```
 
-This downloads job metadata, logs and junit for every step except the `gather-*` steps: about 10 MB in 20 seconds, into `.context/openshift-ci/<org>_<repo>/<pr>/<job>/<build_id>/` under the repository root. Rerunning transfers only what is missing.
+This downloads job metadata, logs and junit for every step except the `gather-*` steps into `.context/openshift-ci/<org>_<repo>/<pr>/<job>/<build_id>/` under the repository root. Size and download time depend on the run. Rerunning transfers only what is missing.
 
 Do not start with `--tier all` or a plain recursive copy. A run can exceed 1 GB and 14,000 objects, most of it a Prometheus dump and cluster state that answer nothing at this stage.
 
@@ -66,7 +66,7 @@ Do not start with `--tier all` or a plain recursive copy. A run can exceed 1 GB 
 scripts/main.py summary <run dir>
 ```
 
-Prints the job, commit, result, the failed ci-operator steps and substeps with durations, each step's result with its path, and the junit reports with failure counts.
+Prints the job, commit, result, the failed ci-operator steps and substeps with durations, each step's result with its path, and the junit reports with failure counts. If the optional step graph is missing, unreadable, malformed, or replaced by Prow's redaction notice, it warns and continues with the remaining sections. Use the per-step results and logs to identify the failure.
 
 Read the failed substeps before anything else:
 
@@ -78,6 +78,8 @@ Read the failed substeps before anything else:
 | Only `gather-*` steps | Artifact collection failed. It does not explain a test failure; when a test step failed too, the gather failures are a side effect. |
 
 ### 4. List the failing tests
+
+If the test JUnit report is missing, inspect the test step's `build-log.txt` for `=== RUN`, assertions, and timeout messages, then continue with step 5. A step timeout can stop report generation after tests have run; missing JUnit alone does not establish that tests never ran or that the failure was infrastructure.
 
 ```bash
 scripts/main.py junit <run dir>/artifacts/<target>/<step>/artifacts/junit_report.xml \
@@ -119,7 +121,7 @@ Done when: you can quote the assertion for each distinct cause.
 When the assertion says what was wrong but not why (a deployment never became ready, a condition stayed `False`), fetch the cluster state:
 
 ```bash
-scripts/main.py fetch <gs_url> --step gather-extra     # one step: ~260 MB, ~7,700 files, about a minute
+scripts/main.py fetch <gs_url> --step gather-extra     # can exceed 1 GB even without archives
 scripts/main.py fetch <gs_url> --tier gather           # all gather-* steps, no archives
 ```
 

@@ -20,7 +20,7 @@ The Prow URL is the `gs://` path with a different prefix. `<job>` is `pull-ci-<o
 | `prowjob.json` | Job spec and status: job name, refs, PR, commit, state, start and completion time. |
 | `started.json`, `finished.json` | Start time; result (`SUCCESS`/`FAILURE`) and `passed`. No `finished.json` means the run has not ended. |
 | `build-log.txt` | ci-operator's own log for the whole job. Includes the output of the failed step, so it is the largest log. |
-| `artifacts/ci-operator-step-graph.json` | Every ci-operator step with `failed`, `duration` (nanoseconds) and, for the test, its `substeps`. |
+| `artifacts/ci-operator-step-graph.json` | Optional graph of ci-operator steps with `failed`, `duration` (nanoseconds) and test `substeps`. Prow may replace it with a redaction notice; `summary` warns and continues. |
 | `artifacts/junit_operator.xml` | The same steps as junit. Not test results. |
 | `artifacts/ci-operator.log` | ci-operator log as JSON Lines. |
 | `artifacts/build-logs/<image>.log` | Image build logs. |
@@ -39,7 +39,7 @@ Not part of the triage tier. Fetch with `scripts/main.py fetch <gs_url> --step <
 | `gather-must-gather` | `oc adm must-gather` output: the same `inspect` tree, limited to the OpenShift platform namespaces. |
 | `gather-audit-logs` | API server audit logs. |
 
-`gather-extra/artifacts/metrics/prometheus.tar.gz` is several hundred MB and is skipped unless `--tier all` is used. Without it `gather-extra` is still about 260 MB in 7,700 files.
+`gather-extra/artifacts/metrics/prometheus.tar.gz` is skipped unless `--tier all` is used. Gather size varies with the cluster and its logs; `gather-extra` alone can exceed 1 GB even without archives.
 
 ### `gather-extra/artifacts/`
 

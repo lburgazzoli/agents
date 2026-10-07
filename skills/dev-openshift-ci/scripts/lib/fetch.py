@@ -6,8 +6,8 @@ Tiers:
   triage (default)  job metadata, logs and junit of every step except the
                     gather-* steps. A few MB.
   gather            triage + the gather-* steps (cluster state, must-gather)
-                    without archives such as the Prometheus dump. Hundreds
-                    of MB, thousands of files, about a minute per step.
+                    without archives such as the Prometheus dump. Can
+                    exceed 1 GB; size and time depend on the run.
   all               everything. Can exceed 1 GB.
 
 --step <name> fetches the named step(s) on top of the tier, e.g.

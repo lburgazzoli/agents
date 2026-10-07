@@ -10,7 +10,7 @@ run_dir is the path printed by the fetch command.
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from .common import add_command, die, load_json
+from .common import add_command, die, info, load_json
 
 
 def register(subcommands):
@@ -53,18 +53,37 @@ def print_job(run_dir):
 
 def print_failed_steps(run_dir):
     graph = run_dir / "artifacts" / "ci-operator-step-graph.json"
-    if not graph.is_file():
+    try:
+        steps = load_json(graph)
+        if not isinstance(steps, list):
+            raise ValueError("expected a list of steps")
+
+        # Prepare rows before printing so an invalid graph cannot leave a
+        # partial failed-step summary. Prow may replace this file with text.
+        rows = []
+        for step in steps:
+            if not isinstance(step, dict):
+                raise ValueError("expected each step to be an object")
+            if not step.get("failed"):
+                continue
+            rows.append(("", step["name"], seconds(step.get("duration"))))
+            substeps = step.get("substeps") or []
+            if not isinstance(substeps, list):
+                raise ValueError("expected substeps to be a list")
+            for sub in substeps:
+                if not isinstance(sub, dict):
+                    raise ValueError("expected each substep to be an object")
+                if sub.get("failed"):
+                    rows.append(("  ", sub["name"], seconds(sub.get("duration"))))
+    except (OSError, UnicodeError, ValueError, TypeError, KeyError) as err:
+        info(f"warning: step graph unavailable ({graph}): {err}; "
+             "continuing with step results and JUnit reports")
         return
 
     print("\n## Failed ci-operator steps: step  duration  [substep  duration]")
-    for step in load_json(graph):
-        if not step.get("failed"):
-            continue
-        row(step["name"], seconds(step.get("duration")))
-        for sub in step.get("substeps") or []:
-            if sub.get("failed"):
-                print("  ", end="")
-                row(sub["name"], seconds(sub.get("duration")))
+    for indent, name, duration in rows:
+        print(indent, end="")
+        row(name, duration)
 
 
 def print_steps(run_dir):
