@@ -29,6 +29,7 @@ npx skills add lburgazzoli/agents
 | `dev-testcontainers` | Testcontainers setup with Podman/Docker |
 | `jira-query` | Query Jira issues (natural language, JQL, or issue key) |
 | `jira-tree` | Walk Jira issue hierarchy (parent, children, siblings, links) |
+| `tools-containers` | Container image inspection with crane and skopeo, no pull or run |
 | `tools-excalidraw` | Excalidraw diagram generation |
 | `tools-gws` | Google Workspace CLI (gws) patterns |
 | `tools-jira-cli` | Jira CLI (acli) patterns |
