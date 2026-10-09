@@ -45,6 +45,7 @@ The bundled [clone.sh](scripts/clone.sh) applies this layout in one step: it res
 scripts/clone.sh --repo kubeflow/model-registry                    # default branch
 scripts/clone.sh --repo kubeflow/model-registry --branch v0.2.0    # specific branch/tag
 scripts/clone.sh --repo https://github.com/kubeflow/model-registry # full URL
+scripts/clone.sh --pr https://github.com/kubeflow/model-registry/pull/123  # pull request
 ```
 
 ### Rules
@@ -52,27 +53,34 @@ scripts/clone.sh --repo https://github.com/kubeflow/model-registry # full URL
 - **Always** clone to `.context/repos/<org>/<repo>@<branch>` — resolve the default branch name if none is specified. The `<org>` is the GitHub organization or user (e.g., `opendatahub-io`, `red-hat-data-services`, `kubeflow`).
 - If the repository is already cloned, **do not** switch branches in place — refresh with `git -C <path> pull --ff-only`. Stale clones produce stale results.
 - For another ref, use a separate clone at `.context/repos/<org>/<repo>@<ref>`.
+- A `/` in the ref becomes `-` in the directory name (`feature/x` → `<repo>@feature-x`), so a ref never creates a nested directory.
 - **Commit SHA** (after a clone that contains it): `git -C .context/repos/<org>/<repo>@<branch> fetch origin <sha> && git -C .context/repos/<org>/<repo>@<branch> checkout <sha>`
 
 ### Pull Request Checkout
 
-When checking out a PR (e.g., `https://github.com/org/repo/pull/123` or `org/repo#123`), always clone the **head (source) fork and branch** — the branch the code is coming from, not the base branch it targets.
-
-1. Resolve the PR's head ref using `gh pr view <number> --repo <org>/<repo> --json headRefName,headRepository,headRepositoryOwner`.
-2. Clone from the head owner's fork at the head branch:
+Check out a GitHub PR (e.g., `https://github.com/org/repo/pull/123` or `org/repo#123`) into `.context/repos/<org>/<repo>@pr-<number>`, where `<org>` is the **upstream** org the PR was opened against, not the fork owner.
 
 ```bash
-# Example: PR from lburgazzoli/foo@my-feature → org/foo@main
-# Clone the SOURCE, not the target:
-gh pr view 123 --repo org/foo --json headRefName,headRepository,headRepositoryOwner --jq '{owner: .headRepositoryOwner.login, repo: .headRepository.name, branch: .headRefName}'
-# → {"owner":"lburgazzoli","repo":"foo","branch":"my-feature"}
-
-git clone --depth 1 --single-branch --branch my-feature \
-  https://github.com/lburgazzoli/foo \
-  .context/repos/lburgazzoli/foo@my-feature
+scripts/clone.sh --pr https://github.com/org/foo/pull/123   # PR URL
+scripts/clone.sh --pr org/foo#123                           # short form
+scripts/clone.sh --repo org/foo --pr 123                    # repo + number
+# → .context/repos/org/foo@pr-123
 ```
 
-3. Follow the standard `<org>/<repo>@<branch>` directory convention — `<org>` is the **head owner** (fork owner), not the upstream org.
+The script fetches `refs/pull/<number>/head` from the upstream repository, so it needs no `gh` and still works when the head fork or branch has been deleted (merged or closed PRs). Run it again to refresh the clone to the PR's current head; a force-pushed PR is handled, and local modifications in the clone are never overwritten.
+
+Equivalent git commands when the script cannot be used:
+
+```bash
+git init -q .context/repos/org/foo@pr-123
+git -C .context/repos/org/foo@pr-123 remote add origin https://github.com/org/foo.git
+git -C .context/repos/org/foo@pr-123 fetch --depth 1 origin "+refs/pull/123/head:refs/remotes/origin/pr-123"
+git -C .context/repos/org/foo@pr-123 checkout -B pr-123 refs/remotes/origin/pr-123
+```
+
+- `refs/pull/<number>/head` is GitHub-specific; other forges need their own ref (e.g., GitLab's `refs/merge-requests/<number>/head`).
+- The checkout is depth 1 and has no merge base with the target branch. To see what the PR changes, read the PR diff from GitHub (`gh pr diff <number> --repo <org>/<repo>`) rather than diffing locally.
+- The PR ref is read-only. Only when the task must **push to the PR's branch**, clone the head fork instead: resolve it with `gh pr view <number> --repo <org>/<repo> --json headRefName,headRepositoryOwner` and clone to `.context/repos/<head-owner>/<repo>@<head-branch>`.
 
 ### Git worktree (optional)
 
